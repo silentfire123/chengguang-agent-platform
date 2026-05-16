@@ -1,10 +1,8 @@
 import asyncio
 from logging.config import fileConfig
-
 from sqlalchemy import pool
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
-
 from alembic import context
 
 # 加载 .env 配置
@@ -29,6 +27,9 @@ if config.config_file_name is not None:
 # 每自己写一个orm模块就可以导入模块
 # 导入每个模块得到orm模型类
 import src.modules.user.model
+import src.modules.permission.model
+import src.modules.role.model
+
 from src.core.base_model import Base
 target_metadata = Base.metadata
 
