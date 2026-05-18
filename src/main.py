@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from starlette.middleware.cors import CORSMiddleware
 from src.core.config import get_settings
 from src.middlewares.logging import LoggingMiddleware
 from src.core.exceptions import register_exception_handlers
@@ -11,6 +12,7 @@ from src.modules.captcha.api import router as captcha_router
 from src.modules.auth.api import router as auth_router
 from src.modules.permission.api import router as permission_router
 from src.modules.role.api import router as role_router
+from src.modules.provider.api import router as provider_router
 
 
 # 使用上下文管理器感知项目生命周期
@@ -32,7 +34,12 @@ def create_app():
 
     # 注册中间件
     app.add_middleware(LoggingMiddleware)
-
+    # 注册跨域中间件
+    app.add_middleware(CORSMiddleware,
+                        allow_origins=['*'],
+                        allow_credentials=True,
+                        allow_methods=['*'],
+                        allow_headers=['*'])
     # 注册异常处理器
     register_exception_handlers(app)
 
@@ -42,7 +49,7 @@ def create_app():
     app.include_router(auth_router,prefix='/api/v1')
     app.include_router(permission_router, prefix='/api/v1')
     app.include_router(role_router, prefix='/api/v1')
-
+    app.include_router(provider_router, prefix="/api/v1")
     return app
 app = create_app()
 

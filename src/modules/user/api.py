@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
-from src.core.deps import get_current_user
+from src.core.deps import get_current_user, PageParams
 from src.infra.database import get_db
-from src.core.base_schema import ResponseSchema
+from src.core.base_schema import ResponseSchema, PageResult
 from src.modules.role.schema import RoleRead
 from src.modules.user.model import User
 from src.modules.user.schema import UserCreate, UserRead, UserWithRolesRead, UserAssignRoles
@@ -23,6 +23,21 @@ async def create_user(
     user = await svc.create_user(data)
     return ResponseSchema(data=UserRead.model_validate(user))
 
+@router.get('/search', response_model=ResponseSchema[PageResult[UserRead]], summary='分页搜索用户')
+async def list_search_results(svc: UserService = Depends(get_user_service),
+                              params: PageParams = Depends()):
+    '''分页搜索用户'''
+    users, total_count = await svc.search_page(params.offset, params.page_size, params.keyword)
+
+    # 列表推导式
+    users = [UserRead.model_validate(p) for p in users]
+
+    return ResponseSchema(data=PageResult(
+        items=users,
+        total=total_count,
+        page=params.page,
+        page_size=params.page_size,
+    ))
 @router.get("/me", response_model=ResponseSchema[UserRead], summary='获取当前登录用户信息')
 async def get_current_user(
         current_user: User = Depends(get_current_user)
@@ -66,3 +81,11 @@ async def get_user_roles_list(
     if user.roles:
         return ResponseSchema(data=[RoleRead.model_validate(r) for r in user.roles])
     return ResponseSchema(data=[])
+
+@router.delete("/{user_id}", response_model=ResponseSchema[bool])
+async def delete_user(
+    user_id: int,
+    svc: UserService = Depends(get_user_service),
+):
+    user = await svc.delete_user(user_id)
+    return ResponseSchema()

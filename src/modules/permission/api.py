@@ -1,7 +1,8 @@
 from fastapi import APIRouter
 from fastapi.params import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
-from src.core.base_schema import ResponseSchema
+from src.core.base_schema import ResponseSchema, PageResult
+from src.core.deps import PageParams
 from src.infra.database import get_db
 from src.modules.permission.schema import PermissionRead, PermissionCreate, PermissionUpdate
 from src.modules.permission.service import PermissionService
@@ -10,6 +11,22 @@ router = APIRouter(prefix='/permissions', tags=['权限'])
 
 def get_permission_service(db: AsyncSession = Depends(get_db)) -> PermissionService:
     return PermissionService(db)
+
+@router.get('/search', response_model=ResponseSchema[PageResult[PermissionRead]], summary='分页搜索权限')
+async def list_search_results(svc: PermissionService = Depends(get_permission_service),
+                              params: PageParams = Depends()):
+    '''分页搜索权限'''
+    perms, total_count = await svc.search_page(params.offset, params.page_size, params.keyword)
+
+    # 列表推导式
+    perms = [PermissionRead.model_validate(p) for p in perms]
+
+    return ResponseSchema(data=PageResult(
+        items=perms,
+        total=total_count,
+        page=params.page,
+        page_size=params.page_size,
+    ))
 
 @router.get('/{permission_id}', response_model=ResponseSchema[PermissionRead], summary='获取权限详情')
 async def get_permission(permission_id: int,
@@ -50,3 +67,6 @@ async def delete_permission(permission_id: int,
                             svc: PermissionService = Depends(get_permission_service)):
     await svc.delete_permission(permission_id)
     return ResponseSchema(message='permission删除成功')
+
+# 分页搜索权限
+

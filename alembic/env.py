@@ -29,6 +29,7 @@ if config.config_file_name is not None:
 import src.modules.user.model
 import src.modules.permission.model
 import src.modules.role.model
+import src.modules.provider.model
 
 from src.core.base_model import Base
 target_metadata = Base.metadata

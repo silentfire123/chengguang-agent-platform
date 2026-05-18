@@ -58,3 +58,12 @@ class UserService:
         # 因为 User.roles 设置了 lazy="selectin"，所以不需要额外操作
         # 直接复用 get_user 即可
         return user
+
+    async def search_page(self, offset: int,
+                          limit: int,
+                          keyword: str | None) -> tuple[list[User], int]:
+        return await self.repo.search_page(offset, limit, keyword)
+
+    async def delete_user(self, user_id: int) -> None:
+        await self.repo.delete_by_id(user_id)
+
